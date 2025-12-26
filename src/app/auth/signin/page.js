@@ -1,8 +1,13 @@
 import SignInPage from "@/components/auth/SigninPage";
-import React from "react";
+import React, { Suspense } from "react";
+import LoadingSkeleton from "@/components/LoadingSkeleton";
 
 const page = () => {
-  return <SignInPage />;
+  return (
+    <Suspense fallback={<LoadingSkeleton />}>
+      <SignInPage />
+    </Suspense>
+  );
 };
 
 export default page;
