@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Mail, Lock, User } from "lucide-react";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { AppContext } from "@/context/AppContext";
 import useUsuario from "@/hooks/useUsuario";
 import Image from "next/image";
@@ -11,6 +11,7 @@ import Link from "next/link";
 export default function SignUpPage() {
   const { formDataUsuario } = useContext(AppContext);
   const { crearUsuario, loading, handleChange } = useUsuario();
+  const [codigo, setCodigo] = useState("");
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-segundo p-4">
@@ -95,11 +96,32 @@ export default function SignUpPage() {
               />
             </div>
 
+            {/* Codigo */}
+            {formDataUsuario.name &&
+              formDataUsuario.email &&
+              formDataUsuario.password && (
+                <div>
+                  <label className="block text-tercero text-sm font-mono mb-2">
+                    <Lock className="inline w-4 h-4 mr-2" />
+                    Codigo
+                  </label>
+                  <input
+                    type="password"
+                    value={codigo}
+                    onChange={(e) => setCodigo(e.target.value)}
+                    name="codigo"
+                    className="w-full bg-segundo border border-tercero/30 rounded px-4 py-3 text-tercero focus:outline-none focus:border-tercero transition-colors font-mono"
+                    placeholder="123456"
+                    required
+                  />
+                </div>
+              )}
+
             {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
-              onClick={() => crearUsuario(formDataUsuario)}
+              onClick={() => crearUsuario({ ...formDataUsuario, codigo })}
               className="w-full bg-tercero text-segundo font-semibold py-3 rounded hover:bg-tercero/80 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg hover:shadow-hacker-green/50"
             >
               {loading ? "CREANDO UNA CUENTA..." : "CREAR UNA CUENTA"}

@@ -3,14 +3,25 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { connectMongoDB } from "@/lib/db";
 import Project from "@/models/Project";
+import { validateApiKey } from "@/lib/validateApiKey";
+import { checkRateLimit, defaultLimiter } from "@/lib/rateLimit";
 
 // POST /api/projects/[id]/duplicate - Duplicate a project
-export async function POST(request, { params }) {
+export async function POST(req, { params }) {
   try {
+    const isValid = validateApiKey(req);
+    if (isValid !== true) return isValid;
+
+    const rateLimitResponse = checkRateLimit(req, defaultLimiter);
+    if (rateLimitResponse !== true) return rateLimitResponse;
+
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
     const { id } = await params;
@@ -23,7 +34,10 @@ export async function POST(request, { params }) {
     }).lean();
 
     if (!originalProject) {
-      return NextResponse.json({ error: "Project not found" }, { status: 404 });
+      return NextResponse.json(
+        { success: false, message: "Project not found" },
+        { status: 404 }
+      );
     }
 
     // Create duplicate
@@ -35,11 +49,17 @@ export async function POST(request, { params }) {
       template: originalProject.template,
     });
 
-    return NextResponse.json({ project: duplicatedProject }, { status: 201 });
-  } catch (error) {
-    console.error("Error duplicating project:", error);
     return NextResponse.json(
-      { error: "Failed to duplicate project" },
+      {
+        success: true,
+        message: "Project duplicated successfully",
+        data: duplicatedProject,
+      },
+      { status: 201 }
+    );
+  } catch (error) {
+    return NextResponse.json(
+      { success: false, message: error.message },
       { status: 500 }
     );
   }

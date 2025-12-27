@@ -1,5 +1,7 @@
-// app/actions/apiServer.js
+// app/actions/apiServer.js ok
 "use server";
+
+import { cookies } from "next/headers";
 
 const API_SECRET_KEY = process.env.API_SECRET_KEY;
 const NEXTAUTH_URL = process.env.NEXTAUTH_URL || "http://localhost:3000";
@@ -18,6 +20,10 @@ export async function apiServer(endpoint, metodo = "GET", datos = null) {
       throw new Error("Endpoint inválido");
     }
 
+    // ⭐ Obtener cookies para pasar la sesión
+    const cookieStore = await cookies();
+    const cookieHeader = cookieStore.toString();
+
     const url = `${NEXTAUTH_URL}${endpoint}`;
 
     const res = await fetch(url, {
@@ -25,6 +31,7 @@ export async function apiServer(endpoint, metodo = "GET", datos = null) {
       headers: {
         "x-api-key": API_SECRET_KEY,
         "Content-Type": "application/json",
+        Cookie: cookieHeader, // ⭐ Pasar las cookies (incluye session-token)
       },
       cache: "no-cache",
       body: metodo !== "GET" ? JSON.stringify(datos) : null,

@@ -1,100 +1,30 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { useEffect, useContext } from "react";
 import { Plus, Rocket } from "lucide-react";
 import Header from "@/components/Header";
 import ProjectCard from "@/components/ProjectCard";
 import StackTemplateCard from "@/components/StackTemplateCard";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
-import Toast from "@/components/Toast";
-import axios from "axios";
+import { AppContext } from "@/context/AppContext";
+import useProjects from "@/hooks/useProjects";
+import { motion } from "framer-motion";
 
 export default function DashboardPage() {
-  const router = useRouter();
-  const [projects, setProjects] = useState([]);
-  const [predefinedStacks, setPredefinedStacks] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [toast, setToast] = useState({
-    show: false,
-    message: "",
-    type: "success",
-  });
+  const { projects, predefinedStacks } = useContext(AppContext);
+  const {
+    handleCreateNew,
+    loading,
+    fetchData,
+    handleDelete,
+    handleUseTemplate,
+    handleDuplicate,
+  } = useProjects();
 
   // Fetch data
   useEffect(() => {
     fetchData();
   }, []);
-
-  const fetchData = async () => {
-    try {
-      const [projectsRes, stacksRes] = await Promise.all([
-        axios.get("/api/projects"),
-        axios.get("/api/stacks/predefined"),
-      ]);
-      setProjects(projectsRes.data.projects);
-      setPredefinedStacks(stacksRes.data.stacks);
-    } catch (error) {
-      showToast("Failed to load data", "error");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const showToast = (message, type = "success") => {
-    setToast({ show: true, message, type });
-  };
-
-  const handleCreateNew = async () => {
-    try {
-      const res = await axios.post("/api/projects", {
-        projectName: "Nuevo Proyecto",
-        description: "",
-        stack: {},
-        template: "custom",
-      });
-      router.push(`/builder/${res.data.project._id}`);
-    } catch (error) {
-      showToast("Failed to create project", "error");
-    }
-  };
-
-  const handleUseTemplate = async (template) => {
-    try {
-      const res = await axios.post("/api/projects", {
-        projectName: template.name,
-        description: template.description,
-        stack: template.stack,
-        template: template.id,
-      });
-      router.push(`/builder/${res.data.project._id}`);
-    } catch (error) {
-      showToast("Failed to create project from template", "error");
-    }
-  };
-
-  const handleDelete = async (id) => {
-    if (!confirm("Are you sure you want to delete this project?")) return;
-
-    try {
-      await axios.delete(`/api/projects/${id}`);
-      setProjects(projects.filter((p) => p._id !== id));
-      showToast("Project deleted successfully");
-    } catch (error) {
-      showToast("Failed to delete project", "error");
-    }
-  };
-
-  const handleDuplicate = async (id) => {
-    try {
-      const res = await axios.post(`/api/projects/${id}/duplicate`);
-      setProjects([res.data.project, ...projects]);
-      showToast("Project duplicated successfully");
-    } catch (error) {
-      showToast("Failed to duplicate project", "error");
-    }
-  };
 
   return (
     <div className="min-h-screen bg-segundo">
@@ -103,9 +33,9 @@ export default function DashboardPage() {
       <main className="container mx-auto px-4 py-8">
         {/* My Projects Section */}
         <section className="mb-12">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
             <div>
-              <h2 className="text-2xl font-semibold text-tercero mb-1">
+              <h2 className="text-lg md:text-2xl font-semibold text-tercero mb-1">
                 Mis Proyectos
               </h2>
               <p className="text-gray-500 font-mono text-sm">
@@ -115,7 +45,7 @@ export default function DashboardPage() {
             </div>
             <button
               onClick={handleCreateNew}
-              className="flex items-center gap-2 bg-segundo text-tercero font-semibold px-6 py-3 rounded-lg hover:bg-tercero/10 transition-all hover:shadow-lg hover:shadow-tercero/10"
+              className="flex items-center gap-2 bg-segundo text-tercero font-semibold px-6 py-3 rounded-lg hover:bg-tercero/10 transition-all hover:shadow-lg hover:shadow-tercero/10 mt-4 md:mt-0"
             >
               <Plus className="w-5 h-5" />
               Crear nuevo proyecto
@@ -180,14 +110,6 @@ export default function DashboardPage() {
           </div>
         </section>
       </main>
-
-      {/* Toast */}
-      <Toast
-        message={toast.message}
-        type={toast.type}
-        isVisible={toast.show}
-        onClose={() => setToast({ ...toast, show: false })}
-      />
     </div>
   );
 }

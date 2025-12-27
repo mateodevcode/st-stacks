@@ -24,7 +24,14 @@ export const AppProvider = ({ children }) => {
     role: "Usuario",
     opcion: "crear",
   });
-  const [proyectos, setProyectos] = useState([]);
+  const [formDataProject, setFormDataProject] = useState({
+    projectName: "Nuevo Proyecto",
+    description: "",
+    stack: {},
+    template: "custom",
+  });
+  const [projects, setProjects] = useState([]);
+  const [predefinedStacks, setPredefinedStacks] = useState([]);
   const [loading, setLoading] = useState(false);
 
   // Cargar todos los usuarios al iniciar el componente
@@ -78,8 +85,6 @@ export const AppProvider = ({ children }) => {
   return (
     <AppContext.Provider
       value={{
-        proyectos,
-        setProyectos,
         formDataUsuario,
         setFormDataUsuario,
         usuario,
@@ -88,6 +93,12 @@ export const AppProvider = ({ children }) => {
         setUsuarios,
         loading,
         setLoading,
+        formDataProject,
+        setFormDataProject,
+        projects,
+        setProjects,
+        predefinedStacks,
+        setPredefinedStacks,
       }}
     >
       {children}

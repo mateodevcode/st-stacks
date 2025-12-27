@@ -1,34 +1,23 @@
-// app/api/usuarios/route.js
+// app/api/usuarios/route.js ok
 import { connectMongoDB } from "@/lib/db";
 import { validateApiKey } from "@/lib/validateApiKey";
 import Usuario from "@/models/Usuario";
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { registrarseValidate } from "@/validations/registrarse";
-import { registerLimiter, defaultLimiter } from "@/lib/rateLimit";
+import {
+  registerLimiter,
+  defaultLimiter,
+  checkRateLimit,
+} from "@/lib/rateLimit";
 
 export async function GET(req) {
-  const isValid = validateApiKey(req);
-  if (isValid !== true) return isValid;
-
-  // 2. Aplicar rate limiting
-  const rateLimitCheck = defaultLimiter(req);
-  if (rateLimitCheck.isLimited) {
-    return NextResponse.json(
-      {
-        success: false,
-        error: rateLimitCheck.message,
-      },
-      {
-        status: 429,
-        headers: {
-          "Retry-After": rateLimitCheck.retryAfter,
-        },
-      }
-    );
-  }
-
   try {
+    const isValid = validateApiKey(req);
+    if (isValid !== true) return isValid;
+
+    const rateLimitResponse = checkRateLimit(req, defaultLimiter);
+    if (rateLimitResponse !== true) return rateLimitResponse;
     await connectMongoDB();
 
     const usuarios = await Usuario.find({});
@@ -52,29 +41,25 @@ export async function GET(req) {
 }
 
 export async function POST(req) {
-  const isValid = validateApiKey(req);
-  if (isValid !== true) return isValid;
-
-  // 2. Aplicar rate limiting
-  const rateLimitCheck = registerLimiter(req);
-  if (rateLimitCheck.isLimited) {
-    return NextResponse.json(
-      {
-        success: false,
-        error: rateLimitCheck.message,
-      },
-      {
-        status: 429,
-        headers: {
-          "Retry-After": rateLimitCheck.retryAfter,
-        },
-      }
-    );
-  }
-
   try {
+    const isValid = validateApiKey(req);
+    if (isValid !== true) return isValid;
+
+    const rateLimitResponse = checkRateLimit(req, registerLimiter);
+    if (rateLimitResponse !== true) return rateLimitResponse;
+
     await connectMongoDB();
     const data = await req.json();
+
+    if (data.codigo !== process.env.CODIGO) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Código inválido.",
+        },
+        { status: 401 }
+      );
+    }
 
     const errores = registrarseValidate(data);
     if (errores.length > 0) {

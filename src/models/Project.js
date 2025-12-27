@@ -41,34 +41,45 @@ const ProjectSchema = new mongoose.Schema(
       default: "",
     },
     stack: {
-      frontend: {
-        type: LayerSchema,
-        default: () => ({}),
+      type: {
+        frontend: {
+          type: LayerSchema,
+          default: () => ({}),
+        },
+        backend: {
+          type: LayerSchema,
+          default: () => ({}),
+        },
+        api: {
+          type: LayerSchema,
+          default: () => ({}),
+        },
+        database: {
+          type: LayerSchema,
+          default: () => ({}),
+        },
+        realtime: {
+          type: LayerSchema,
+          default: () => ({}),
+        },
+        storage: {
+          type: LayerSchema,
+          default: () => ({}),
+        },
+        auth: {
+          type: LayerSchema,
+          default: () => ({}),
+        },
       },
-      backend: {
-        type: LayerSchema,
-        default: () => ({}),
-      },
-      api: {
-        type: LayerSchema,
-        default: () => ({}),
-      },
-      database: {
-        type: LayerSchema,
-        default: () => ({}),
-      },
-      realtime: {
-        type: LayerSchema,
-        default: () => ({}),
-      },
-      storage: {
-        type: LayerSchema,
-        default: () => ({}),
-      },
-      auth: {
-        type: LayerSchema,
-        default: () => ({}),
-      },
+      default: () => ({
+        frontend: {},
+        backend: {},
+        api: {},
+        database: {},
+        realtime: {},
+        storage: {},
+        auth: {},
+      }),
     },
     template: {
       type: String,

@@ -1,14 +1,18 @@
-// app/api/usuarios/[id]/route.js
+// app/api/usuarios/[id]/route.js ok
 import { NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/db";
 import { validateApiKey } from "@/lib/validateApiKey";
 import Usuario from "@/models/Usuario";
+import { checkRateLimit, defaultLimiter } from "@/lib/rateLimit";
 
 export async function GET(req, { params }) {
-  const isValid = validateApiKey(req);
-  if (isValid !== true) return isValid;
-
   try {
+    const isValid = validateApiKey(req);
+    if (isValid !== true) return isValid;
+
+    const rateLimitResponse = checkRateLimit(req, defaultLimiter);
+    if (rateLimitResponse !== true) return rateLimitResponse;
+
     await connectMongoDB();
     const { id } = await params;
     const UsuarioEncontrado = await Usuario.findById(id);
@@ -43,10 +47,13 @@ export async function GET(req, { params }) {
 }
 
 export async function PUT(req, { params }) {
-  const isValid = validateApiKey(req);
-  if (isValid !== true) return isValid;
-
   try {
+    const isValid = validateApiKey(req);
+    if (isValid !== true) return isValid;
+
+    const rateLimitResponse = checkRateLimit(req, defaultLimiter);
+    if (rateLimitResponse !== true) return rateLimitResponse;
+
     const { id } = await params;
     await connectMongoDB();
     const data = await req.json();
@@ -73,10 +80,13 @@ export async function PUT(req, { params }) {
 }
 
 export async function DELETE(req, { params }) {
-  const isValid = validateApiKey(req);
-  if (isValid !== true) return isValid;
-
   try {
+    const isValid = validateApiKey(req);
+    if (isValid !== true) return isValid;
+
+    const rateLimitResponse = checkRateLimit(req, defaultLimiter);
+    if (rateLimitResponse !== true) return rateLimitResponse;
+
     const { id } = await params;
     await connectMongoDB();
 
@@ -99,9 +109,7 @@ export async function DELETE(req, { params }) {
       {
         success: true,
         message: "Usuario y todos sus datos han sido eliminados correctamente.",
-        data: {
-          usuario: usuarioEliminado,
-        },
+        data: usuarioEliminado,
       },
       { status: 200 }
     );

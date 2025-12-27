@@ -1,4 +1,6 @@
 // lib/rateLimit.js
+import { NextResponse } from "next/server";
+
 const rateLimitMap = new Map();
 
 export function createRateLimiter(maxRequests = 10, windowMs = 60000) {
@@ -44,3 +46,25 @@ export function createRateLimiter(maxRequests = 10, windowMs = 60000) {
 export const registerLimiter = createRateLimiter(5, 60000); // 5 por minuto
 export const loginLimiter = createRateLimiter(5, 60000); // 5 por minuto
 export const defaultLimiter = createRateLimiter(30, 60000); // 30 por minuto
+
+// ✨ Nueva función helper que retorna NextResponse directamente
+export function checkRateLimit(req, limiter) {
+  const rateLimitCheck = limiter(req);
+
+  if (rateLimitCheck.isLimited) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: rateLimitCheck.message,
+      },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": rateLimitCheck.retryAfter,
+        },
+      }
+    );
+  }
+
+  return true; // Permitido, continuar
+}

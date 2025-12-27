@@ -1,178 +1,42 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import {
-  Save,
-  X,
-  Plus,
-  Code,
-  Layers,
-  DollarSign,
-  ChevronRight,
-  ChevronLeft,
-} from "lucide-react";
+import { Save, X, Code, Layers, DollarSign, Plus } from "lucide-react";
 import Header from "@/components/Header";
 import TechnologyCard from "@/components/TechnologyCard";
 import Modal from "@/components/Modal";
-import Toast from "@/components/Toast";
 import { calculateTotalCost } from "@/lib/utils";
 import { TECHNOLOGIES } from "@/lib/mockData";
-import axios from "axios";
-
-const LAYER_LABELS = {
-  frontend: "Frontend",
-  backend: "Backend",
-  api: "API",
-  database: "Database",
-  realtime: "Real-time",
-  storage: "Storage",
-  auth: "Authentication",
-};
+import useProjects from "@/hooks/useProjects";
+import { LAYER_LABELS } from "@/data/layer.labels";
+import { useParams } from "next/navigation";
 
 export default function BuilderPage() {
-  const params = useParams();
-  const router = useRouter();
-  const [project, setProject] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState({
-    show: false,
-    message: "",
-    type: "success",
-  });
-  const [selectedLayer, setSelectedLayer] = useState(null);
-  const [showTechModal, setShowTechModal] = useState(false);
+  const {
+    project,
+    projectName,
+    setProjectName,
+    handleSave,
+    loading,
+    showTechModal,
+    setShowTechModal,
+    selectTechnology,
+    selectedLayer,
+    handleDiscard,
+    removeLayer,
+    openTechModal,
+    toggleLayer,
+    fetchProject,
+  } = useProjects();
   const [showPreview, setShowPreview] = useState(false);
-  const [projectName, setProjectName] = useState("");
-
-  // DND sensors
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
+  const params = useParams();
 
   useEffect(() => {
     fetchProject();
   }, [params.id]);
 
-  const fetchProject = async () => {
-    try {
-      const res = await axios.get(`/api/projects/${params.id}`);
-      setProject(res.data.project);
-      setProjectName(res.data.project.projectName);
-    } catch (error) {
-      showToast("Failed to load project", "error");
-      router.push("/dashboard");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const showToast = (message, type = "success") => {
-    setToast({ show: true, message, type });
-  };
-
-  const toggleLayer = (layerKey) => {
-    setProject({
-      ...project,
-      stack: {
-        ...project.stack,
-        [layerKey]: {
-          ...project.stack[layerKey],
-          enabled: !project.stack[layerKey]?.enabled,
-        },
-      },
-    });
-  };
-
-  const openTechModal = (layerKey) => {
-    setSelectedLayer(layerKey);
-    setShowTechModal(true);
-  };
-
-  const selectTechnology = (tech) => {
-    setProject({
-      ...project,
-      stack: {
-        ...project.stack,
-        [selectedLayer]: {
-          enabled: true,
-          technology: tech.name,
-          hosting: tech.hosting || [],
-          cost: tech.cost || "Gratis",
-          storage: tech.storage || "",
-          notes: tech.description || "",
-        },
-      },
-    });
-    setShowTechModal(false);
-    showToast(`${tech.name} added to ${LAYER_LABELS[selectedLayer]}`);
-  };
-
-  const removeLayer = (layerKey) => {
-    setProject({
-      ...project,
-      stack: {
-        ...project.stack,
-        [layerKey]: {
-          enabled: false,
-          technology: "",
-          hosting: [],
-          cost: "Gratis",
-          notes: "",
-        },
-      },
-    });
-  };
-
-  const handleSave = async () => {
-    if (!projectName.trim()) {
-      showToast("Project name is required", "error");
-      return;
-    }
-
-    setSaving(true);
-    try {
-      await axios.put(`/api/projects/${params.id}`, {
-        projectName,
-        description: project.description,
-        stack: project.stack,
-        template: project.template,
-      });
-      showToast("Project saved successfully");
-      setTimeout(() => router.push("/dashboard"), 1500);
-    } catch (error) {
-      showToast("Failed to save project", "error");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleDiscard = () => {
-    if (confirm("Discard changes and return to dashboard?")) {
-      router.push("/dashboard");
-    }
-  };
-
-  if (loading) {
+  if (loading || !project || !project.stack) {
     return (
       <div className="min-h-screen bg-segundo flex items-center justify-center">
         <div className="text-tercero font-mono">cargando proyectos...</div>
@@ -191,15 +55,15 @@ export default function BuilderPage() {
       <main className="container mx-auto px-4 py-6">
         {/* Top Bar */}
         <div className="bg-segundo border border-tercero/20 rounded-lg p-4 mb-6">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <input
               type="text"
               value={projectName}
               onChange={(e) => setProjectName(e.target.value)}
-              className="flex-1 bg-segundo border border-tercero/20 rounded px-4 py-2 text-sexto focus:outline-none focus:border-tercero/50 transition-colors font-semibold text-lg"
+              className="flex-1 bg-segundo border border-tercero/20 rounded px-4 py-2 text-sexto focus:outline-none focus:border-tercero/50 transition-colors font-semibold text-lg w-full md:w-auto"
               placeholder="Project Name"
             />
-            <div className="flex gap-2">
+            <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
               <button
                 onClick={() => setShowPreview(!showPreview)}
                 className="flex items-center gap-2 bg-segundo hover:bg-tercero/10 text-tercero px-4 py-2 rounded border border-tercero/20 hover:border-tercero/50 transition-all font-mono text-sm"
@@ -216,11 +80,11 @@ export default function BuilderPage() {
               </button>
               <button
                 onClick={handleSave}
-                disabled={saving}
+                disabled={loading}
                 className="flex items-center gap-2 bg-segundo text-tercero font-bold px-6 py-2 rounded hover:bg-tercero/10 transition-all disabled:opacity-50 text-sm"
               >
                 <Save className="w-4 h-4" />
-                {saving ? "Guardando..." : "Guardar"}
+                {loading ? "Guardando..." : "Guardar"}
               </button>
             </div>
           </div>
@@ -398,14 +262,6 @@ export default function BuilderPage() {
             ))}
         </div>
       </Modal>
-
-      {/* Toast */}
-      <Toast
-        message={toast.message}
-        type={toast.type}
-        isVisible={toast.show}
-        onClose={() => setToast({ ...toast, show: false })}
-      />
     </div>
   );
 }

@@ -3,10 +3,8 @@
 import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
 
-export default async function HomePage() {
+export default function HomePage() {
   const { data: session } = useSession();
-
-  console.log(session);
 
   if (session) {
     redirect("/dashboard");
